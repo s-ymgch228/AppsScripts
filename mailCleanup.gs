@@ -1,9 +1,9 @@
-let process_limit = 100;
-let max_tries     = 100;
+const process_limit = 100;
+const max_tries     = 100;
 
 function mailCleanup() {
 
-  archive_opened(7);
+  archive_opened(10);
 
   trash_ndays(30);
   trash_ndays(60);
@@ -13,17 +13,17 @@ function mailCleanup() {
 function trash_ndays(days) {
   const query = 'NOT in:inbox label:trash' + days + ' older_than:' + days + 'd';
 
-  var total = 0;
-  var i = 0;
-  for (i=0; i < max_tries; i++) {
-    var mails = GmailApp.search(query, 0, process_limit);
-    var n = mails.length;
+  let total = 0;
+  let i;
+  for (i = 0; i < max_tries; i++) {
+    let mails = GmailApp.search(query, 0, process_limit);
+    let n = mails.length;
 
-    GmailApp.moveThreadsToTrash(mails);
-    total += n;
-
-    if (n < process_limit)
+    if (n <= 0)
       break;
+
+    Logger.log("trash" + days + ": trash " + n + " mails");
+    GmailApp.moveThreadsToTrash(mails);
   }
 
   Logger.log("Trash" + days + ": " + total + " mails, (loop count=" + (i + 1) + ")");
@@ -32,9 +32,11 @@ function trash_ndays(days) {
 function archive_opened(days) {
   const d = new Date
   const year = d.getFullYear();
-  const query = 'in:inbox is:read older_than:' + days + 'd';
+  let query = 'in:inbox is:read';
+  if (days > 0)
+    query += 'older_than:' + days + 'd';
 
-  var label = GmailApp.getUserLabelByName(year);
+  let label = GmailApp.getUserLabelByName(year);
   if (label == null) {
     GmailApp.createLabel(year);
     label = GmailApp.getUserLabelByName(year);
@@ -45,17 +47,17 @@ function archive_opened(days) {
   }
 
   var total = 0;
-  for (i=0; i < max_tries; i++) {
-    var mails = GmailApp.search(query, 0, process_limit);
-    var n = mails.length;
+  for (let i = 0; i < max_tries; i++) {
+    let mails = GmailApp.search(query, 0, process_limit);
+    let n = mails.length;
 
-    if (n > 0) {
-      label.addToThread(mails);
-      GmailApp.moveThreadToArchive(mails);
-    }
-    total += n;
-    if (n != process_limit)
+    if (n <= 0)
       break;
+
+    Logger.log("archived " + n + " mails");
+    label.addToThreads(mails);
+    GmailApp.moveThreadsToArchive(mails);
+    total += n;
   }
 
   Logger.log("archived " + total + " mails");
