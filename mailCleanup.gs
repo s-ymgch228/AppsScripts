@@ -34,7 +34,7 @@ function archive_opened(days) {
   const year = d.getFullYear();
   let query = 'in:inbox is:read';
   if (days > 0)
-    query += 'older_than:' + days + 'd';
+    query += ' older_than:' + days + 'd';
 
   let label = GmailApp.getUserLabelByName(year);
   if (label == null) {
